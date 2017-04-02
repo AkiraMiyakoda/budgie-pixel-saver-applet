@@ -1,0 +1,148 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ budgie-pixel-saver-applet (3.0.1-ubuntu0.1) xenial; urgency=medium
+ .
+   * new upstream release
+Author: David Mohammed <fossfreedom@ubuntu.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2017-04-02
+
+--- budgie-pixel-saver-applet-3.0.1.orig/meson.build
++++ budgie-pixel-saver-applet-3.0.1/meson.build
+@@ -37,7 +37,7 @@ dep_peas = dependency('libpeas-1.0', ver
+ dep_budgie = dependency('budgie-1.0', version: '>= 2')
+ dep_wnck = dependency('libwnck-3.0', version: '>= 3.14.0')
+ 
+-LIB_INSTALL_DIR = '/usr/lib/budgie-desktop/plugins/'
++LIB_INSTALL_DIR = '/usr/lib/budgie-desktop/plugins/budgie-pixel-saver-applet/'
+ 
+ subdir('src')
+ 
+--- budgie-pixel-saver-applet-3.0.1.orig/src/BudgiePixelSaverApplet.vala
++++ budgie-pixel-saver-applet-3.0.1/src/BudgiePixelSaverApplet.vala
+@@ -69,6 +69,15 @@ public class Applet : Budgie.Applet
+             return Gdk.EVENT_PROPAGATE;
+         });
+ 
++        event_box.button_release_event.connect ((event) => {
++            if (event.button == 3) {
++                Wnck.ActionMenu menu = this.title_bar_manager.get_action_menu_for_active_window();
++                menu.popup(null, null, null, event.button, Gtk.get_current_event_time());
++                return true;
++            }
++            return Gdk.EVENT_PROPAGATE;
++        });
++
+         this.minimize_button.clicked.connect (() => {
+             this.title_bar_manager.minimize_active_window();
+         });
+--- budgie-pixel-saver-applet-3.0.1.orig/src/TitleBarManager.vala
++++ budgie-pixel-saver-applet-3.0.1/src/TitleBarManager.vala
+@@ -54,7 +54,7 @@ public class TitleBarManager : Object {
+         this.on_wnck_active_window_changed(this.screen.get_active_window());
+ 
+         this.screen.window_closed.connect( (w) => {
+-            this.screen.force_update();
++            //this.screen.force_update();
+             this.on_wnck_active_window_changed(w);
+         });
+     }
+@@ -68,6 +68,10 @@ public class TitleBarManager : Object {
+         }
+     }
+ 
++    public Wnck.ActionMenu? get_action_menu_for_active_window() {
++        return new Wnck.ActionMenu(this.active_window);
++    }
++
+     public void close_active_window(){
+         if(this.active_window == null) return;
+ 
+@@ -106,10 +110,19 @@ public class TitleBarManager : Object {
+                 out child_pid);
+ 
+             ChildWatch.add (child_pid, (pid, status) => {
+-                if(window.is_maximized()) {
+-                    window.unmaximize();
+-                    window.maximize();
+-                }
++                Timeout.add(30, () => {
++                    if(window.is_maximized()) {
++                        window.unmaximize();
++                        window.maximize();
++                    } else if(window.is_maximized_horizontally()) {
++                        window.unmaximize_horizontally();
++                        window.maximize_horizontally();
++                    } else if(window.is_maximized_vertically()) {
++                        window.unmaximize_vertically();
++                        window.maximize_vertically();
++                    }
++                    return false;
++                });
+                 Process.close_pid (pid);
+             });
+         } catch(SpawnError e){
+--- budgie-pixel-saver-applet-3.0.1.orig/src/net.milgar.budgie-pixel-saver.gschema.xml
++++ budgie-pixel-saver-applet-3.0.1/src/net.milgar.budgie-pixel-saver.gschema.xml
+@@ -14,11 +14,11 @@
+     <key type="b" name="hide-for-csd">
+       <default>false</default>
+       <summary>Hide if window is CSD</summary>
+-      <description>Whether to hide applet if window is Client Side Decoreted</description>
++      <description>Whether to hide applet if window is Client Side Decorated</description>
+     </key>
+     <key type="b" name="hide-for-unmaximized">
+       <default>false</default>
+-      <summary>Hide if window is unmaximixed</summary>
++      <summary>Hide if window is unmaximized</summary>
+       <description>Whether to hide applet if window is unmaximized</description>
+     </key>
+   </schema>
+--- budgie-pixel-saver-applet-3.0.1.orig/src/settings.ui
++++ budgie-pixel-saver-applet-3.0.1/src/settings.ui
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <!-- Generated with glade 3.20.0 -->
+ <interface>
+-  <requires lib="gtk+" version="3.20"/>
++  <requires lib="gtk+" version="3.18"/>
+   <object class="GtkAdjustment" id="adjustment1">
+     <property name="upper">100</property>
+     <property name="step_increment">1</property>
+@@ -67,7 +67,8 @@
+         <property name="visible">True</property>
+         <property name="can_focus">False</property>
+         <property name="halign">start</property>
+-        <property name="label" translatable="yes">Hide for Client Side Decoreted windows</property>
++        <property name="label" translatable="yes">Hide for Client Side
++Decorated windows</property>
+         <property name="wrap">True</property>
+         <property name="xalign">0</property>
+       </object>
+@@ -81,7 +82,9 @@
+         <property name="visible">True</property>
+         <property name="can_focus">False</property>
+         <property name="halign">start</property>
+-        <property name="label" translatable="yes">Hide for unmaximized windows</property>
++        <property name="label" translatable="yes">Hide for
++unmaximized
++windows</property>
+         <property name="wrap">True</property>
+         <property name="xalign">0</property>
+       </object>

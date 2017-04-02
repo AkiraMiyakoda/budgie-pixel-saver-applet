@@ -1,0 +1,9 @@
+Index: budgie-pixel-saver-applet-3.0.1/meson.build
+===================================================================
+--- budgie-pixel-saver-applet-3.0.1.orig/meson.build
++++ budgie-pixel-saver-applet-3.0.1/meson.build
+@@ -41,4 +41,3 @@ LIB_INSTALL_DIR = '/usr/lib/budgie-deskt
+ 
+ subdir('src')
+ 
+-meson.add_install_script('./meson_post_install.sh')

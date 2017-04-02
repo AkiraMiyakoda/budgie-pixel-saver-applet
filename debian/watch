@@ -1,0 +1,3 @@
+version=3
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/budgie-pixel-saver-applet-$1\.tar\.gz/ \
+  https://github.com/ilgarmehmetali/budgie-pixel-saver-applet/tags .*/v?(\d\S*)\.tar\.gz
