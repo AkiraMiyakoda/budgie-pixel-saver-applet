@@ -95,39 +95,7 @@ public class TitleBarManager : Object {
     }
 
     private void toggle_title_bar_for_window(Wnck.Window window, bool is_on){
-        try {
-            string[] spawn_args = {"xprop", "-id", "%#.8x".printf((uint)window.get_xid()),
-                "-f", "_GTK_HIDE_TITLEBAR_WHEN_MAXIMIZED", "32c", "-set",
-                "_GTK_HIDE_TITLEBAR_WHEN_MAXIMIZED", is_on ? "0x0" : "0x1"};
-            string[] spawn_env = Environ.get ();
-            Pid child_pid;
 
-            Process.spawn_async ("/",
-                spawn_args,
-                spawn_env,
-                SpawnFlags.SEARCH_PATH | SpawnFlags.DO_NOT_REAP_CHILD,
-                null,
-                out child_pid);
-
-            ChildWatch.add (child_pid, (pid, status) => {
-                Timeout.add(30, () => {
-                    if(window.is_maximized()) {
-                        window.unmaximize();
-                        window.maximize();
-                    } else if(window.is_maximized_horizontally()) {
-                        window.unmaximize_horizontally();
-                        window.maximize_horizontally();
-                    } else if(window.is_maximized_vertically()) {
-                        window.unmaximize_vertically();
-                        window.maximize_vertically();
-                    }
-                    return false;
-                });
-                Process.close_pid (pid);
-            });
-        } catch(SpawnError e){
-            error(e.message);
-        }
     }
 
     private bool is_window_csd(Wnck.Window window){
@@ -155,6 +123,33 @@ public class TitleBarManager : Object {
             error(e.message);
         }
         return false;
+    }
+
+    private void change_titlebar() {
+        if (active_window == null || is_window_csd(active_window)) return;
+
+        try {
+                bool hide_titlebar = false;
+                if (this.active_window.is_maximized()){
+                    hide_titlebar = true;
+                }
+                string[] spawn_args = {"xprop", "-id", "%#.8x".printf((uint)active_window.get_xid()),
+                    "-f", "_MOTIF_WM_HINTS", "32c", "-set",
+                    "_MOTIF_WM_HINTS", hide_titlebar ? "0x2, 0x0, 0x2, 0x0, 0x0" : "0x2, 0x0, 0x1, 0x0, 0x0"};
+                string[] spawn_env = Environ.get ();
+                Pid child_pid;
+
+                Process.spawn_async ("/",
+                    spawn_args,
+                    spawn_env,
+                    SpawnFlags.SEARCH_PATH | SpawnFlags.DO_NOT_REAP_CHILD,
+                    null,
+                    out child_pid);
+
+                Process.close_pid (child_pid);
+            } catch(SpawnError e) {
+                error(e.message);
+            }
     }
 
     private void on_wnck_active_window_changed(Wnck.Window? previous_window){
@@ -187,6 +182,7 @@ public class TitleBarManager : Object {
         } else {
             this.on_title_changed("");
         }
+        change_titlebar();
         this.on_active_window_changed(can_minimize, can_maximize, can_close, is_csd, is_maximized);
     }
 
@@ -199,6 +195,7 @@ public class TitleBarManager : Object {
     }
 
     private void on_active_window_state_changed(Wnck.WindowState changed_mask, Wnck.WindowState new_state){
+        change_titlebar();
         this.on_window_state_changed(this.active_window.is_maximized());
     }
 
