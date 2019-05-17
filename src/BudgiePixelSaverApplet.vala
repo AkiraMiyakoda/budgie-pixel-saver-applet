@@ -62,6 +62,8 @@ public class Applet : Budgie.Applet
         this.event_box = new Gtk.EventBox();
         this.event_box.add(this.label);
 
+        this.set_css_styles();
+
         this.applet_container = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
         this.applet_container.pack_start (this.event_box, false, false, 0);
         this.applet_container.pack_start (this.minimize_button, false, false, 0);
@@ -141,6 +143,19 @@ public class Applet : Budgie.Applet
 
     ~Applet(){
         this.title_bar_manager.unregister();
+    }
+
+    private void set_css_styles(){
+        this.applet_container.get_style_context().add_class("titlebar");
+
+        this.minimize_button.get_style_context().add_class("titlebutton");
+        this.minimize_button.get_style_context().add_class("minimize");
+
+        this.maximize_button.get_style_context().add_class("titlebutton");
+        this.maximize_button.get_style_context().add_class("maximize");
+
+        this.close_button.get_style_context().add_class("titlebutton");
+        this.close_button.get_style_context().add_class("close");
     }
 
     void on_settings_change(string key) {
