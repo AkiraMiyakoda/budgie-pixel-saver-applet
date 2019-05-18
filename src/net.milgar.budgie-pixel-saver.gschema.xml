@@ -21,5 +21,10 @@
       <summary>Hide if window is unmaximized</summary>
       <description>Whether to hide applet if window is unmaximized</description>
     </key>
+    <key type="b" name="theme-buttons">
+      <default>true</default>
+      <summary>Style buttons using the theme</summary>
+      <description>Whether to style titlebar buttons using the current theme</description>
+    </key>
   </schema>
 </schemalist>
