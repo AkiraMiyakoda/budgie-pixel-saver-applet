@@ -219,7 +219,32 @@ public class Applet : Budgie.Applet
         bool hide_for_csd = this.is_active_window_csd && this.settings.get_boolean("hide-for-csd");
         bool hide_for_unmaximized = !this.is_active_window_maximized && this.settings.get_boolean("hide-for-unmaximized");
 
-        if( !this.is_buttons_visible || hide_for_unmaximized || hide_for_csd ) {
+        /*if (!this.is_buttons_visible) {
+            message("not is buttons visble");
+        }
+
+        if (this.is_active_window_csd) {
+            message("this is a csd window");
+        }
+
+        if (this.settings.get_boolean("hide-for-csd")) {
+            message("settings hide csd");
+        }
+
+        if (this.settings.get_boolean("hide-for-unmaximized")) {
+            message("settings hide for unmax");
+        }
+
+        if (hide_for_csd) {
+            message("hide for csd");
+        }
+
+        if (hide_for_unmaximized) {
+            message("hide for unmaximised");
+        }
+        */
+
+        /*if( !this.is_buttons_visible || hide_for_unmaximized || hide_for_csd ) {
             this.maximize_button.hide();
             this.minimize_button.hide();
             this.close_button.hide();
@@ -229,13 +254,28 @@ public class Applet : Budgie.Applet
             this.minimize_button.show();
             this.close_button.show();
             this.applet_container.show();
-        }
+        }*/
 
         if(!this.is_title_visible || hide_for_csd || hide_for_unmaximized) {
             this.label.hide();
         } else {
             this.label.show();
         }
+
+        if( !this.is_buttons_visible || hide_for_unmaximized || hide_for_csd ) {
+            //message("lets hide all");
+            this.maximize_button.hide();
+            this.minimize_button.hide();
+            this.close_button.hide();
+            //this.applet_container.hide();
+        } else {
+            //message("lets show buttons");
+            this.maximize_button.show();
+            this.minimize_button.show();
+            this.close_button.show();
+            //this.applet_container.show();
+        }
+
 
         queue_resize();
     }
