@@ -145,8 +145,10 @@ public class TitleBarManager : Object {
                     SpawnFlags.SEARCH_PATH | SpawnFlags.DO_NOT_REAP_CHILD,
                     null,
                     out child_pid);
-
-                Process.close_pid (child_pid);
+                ChildWatch.add (child_pid, (pid, status) => {
+                    // Triggered when the child indicated by child_pid exits
+                    Process.close_pid (pid);
+                });
             } catch(SpawnError e) {
                 error(e.message);
             }
