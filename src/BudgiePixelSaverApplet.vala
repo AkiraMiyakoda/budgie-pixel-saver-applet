@@ -150,14 +150,31 @@ public class Applet : Budgie.Applet
         this.applet_container.get_style_context().add_class("pixelsaver");
 
         if (theme_buttons) {
-            this.minimize_button.get_style_context().add_class("titlebutton");
-            this.minimize_button.get_style_context().add_class("minimize");
+            var context = this.minimize_button.get_style_context();
+            var list_classes =  context.list_classes();
+            foreach (string class in list_classes) {
+                context.remove_class(class);
+            }
+            context.add_class("titlebutton");
+            context.add_class("minimize");
 
-            this.maximize_button.get_style_context().add_class("titlebutton");
-            this.maximize_button.get_style_context().add_class("maximize");
+            context = this.maximize_button.get_style_context();
+            list_classes =  context.list_classes();
+            foreach (string class in list_classes) {
+                context.remove_class(class);
+            }
 
-            this.close_button.get_style_context().add_class("titlebutton");
-            this.close_button.get_style_context().add_class("close");
+            context.add_class("titlebutton");
+            context.add_class("maximize");
+
+            context = this.close_button.get_style_context();
+            list_classes =  context.list_classes();
+            foreach (string class in list_classes) {
+                context.remove_class(class);
+            }
+
+            context.add_class("titlebutton");
+            context.add_class("close");
         } else {
             this.minimize_button.get_style_context().remove_class("titlebutton");
             this.minimize_button.get_style_context().remove_class("minimize");
