@@ -26,5 +26,9 @@
       <summary>Style buttons using the theme</summary>
       <description>Whether to style titlebar buttons using the current theme</description>
     </key>
+    <key type="as" name="blacklist-apps">
+      <default>['Mozilla Firefox']</default>
+      <summary>List of apps to blacklist from being touched by pixel-saver</summary>
+    </key>
   </schema>
 </schemalist>

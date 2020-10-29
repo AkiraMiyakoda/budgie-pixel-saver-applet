@@ -28,6 +28,7 @@ public class Applet : Budgie.Applet
     bool is_title_visible {get; set;}
     bool is_active_window_csd {get; set;}
     bool is_active_window_maximized {get; set;}
+    bool force_hide {get; set;}
 
     public string uuid { public set; public get; }
 
@@ -40,6 +41,7 @@ public class Applet : Budgie.Applet
     public Applet(string uuid)
     {
         Object(uuid: uuid);
+        this.force_hide = true;
         this.title_bar_manager = PixelSaver.TitleBarManager.INSTANCE;
         this.title_bar_manager.register();
 
@@ -116,12 +118,13 @@ public class Applet : Budgie.Applet
         });
 
         this.title_bar_manager.on_active_window_changed.connect(
-            (can_minimize, can_maximize, can_close, is_active_window_csd, is_active_window_maximized) => {
+            (can_minimize, can_maximize, can_close, is_active_window_csd, is_active_window_maximized, force_hide) => {
                 this.minimize_button.set_sensitive(can_minimize);
                 this.maximize_button.set_sensitive(can_maximize);
                 this.close_button.set_sensitive(can_close);
                 this.is_active_window_csd = is_active_window_csd;
                 this.is_active_window_maximized = is_active_window_maximized;
+                this.force_hide = force_hide;
                 this.update_visibility(false);
             }
         );
@@ -135,6 +138,7 @@ public class Applet : Budgie.Applet
         this.on_settings_change("size");
         this.on_settings_change("visibility");
         this.on_settings_change("theme-buttons");
+        this.on_settings_change("blacklist-apps");
 
         wm_settings = new GLib.Settings("com.solus-project.budgie-wm");
         wm_settings.changed.connect(this.on_wm_settings_changed);
@@ -228,6 +232,9 @@ public class Applet : Budgie.Applet
         } else if (key == "theme-buttons") {
             this.theme_buttons = settings.get_boolean(key);
             this.set_css_styles();
+        } else if (key == "blacklist-apps") {
+            string[] blacklist_apps = settings.get_strv(key);
+            this.force_hide = this.title_bar_manager.check_valid_app(blacklist_apps);
         }
         this.update_visibility(true);
     }
@@ -273,13 +280,13 @@ public class Applet : Budgie.Applet
             this.applet_container.show();
         }*/
 
-        if(!this.is_title_visible || hide_for_csd || hide_for_unmaximized) {
+        if(!this.is_title_visible || hide_for_csd || hide_for_unmaximized || force_hide) {
             this.label.hide();
         } else {
             this.label.show();
         }
 
-        if( !this.is_buttons_visible || hide_for_unmaximized || hide_for_csd ) {
+        if( !this.is_buttons_visible || hide_for_unmaximized || hide_for_csd || force_hide) {
             //message("lets hide all");
             this.maximize_button.hide();
             this.minimize_button.hide();

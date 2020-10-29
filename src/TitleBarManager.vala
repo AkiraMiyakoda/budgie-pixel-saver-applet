@@ -7,6 +7,7 @@ public class TitleBarManager : Object {
     private static TitleBarManager? instance;
 
     private int references;
+    private string[] blacklist_apps;
 
     public static TitleBarManager INSTANCE {
         get {
@@ -19,17 +20,22 @@ public class TitleBarManager : Object {
 
     public signal void on_title_changed (string title);
     public signal void on_window_state_changed (bool is_maximized);
-    public signal void on_active_window_changed (bool can_minimize, bool can_maximize, bool can_close, bool is_active_window_csd, bool is_active_window_maximized);
+    public signal void on_active_window_changed (bool can_minimize,
+        bool can_maximize,
+        bool can_close,
+        bool is_active_window_csd,
+        bool is_active_window_maximized,
+        bool force_hide);
 
     /*
-     * Should call this at construster
+     * Should call this at constructor
      */
     public void register(){
         references++;
     }
 
     /*
-     * Should call this at destructer
+     * Should call this at destructor
      */
     public void unregister(){
         if(--references <= 0){
@@ -70,6 +76,19 @@ public class TitleBarManager : Object {
 
     public Wnck.ActionMenu? get_action_menu_for_active_window() {
         return new Wnck.ActionMenu(this.active_window);
+    }
+
+    public bool check_valid_app(string[] blacklist_apps) {
+        this.blacklist_apps = blacklist_apps;
+        if (this.active_window != null && this.blacklist_apps != null && blacklist_apps.length > 0) {
+            if (!this.active_window.has_name()) return false;
+            string app_name = this.active_window.get_name();
+            foreach (string val in this.blacklist_apps) {
+                if(val == app_name) return true;
+            }
+        }
+
+        return false;
     }
 
     public void close_active_window(){
@@ -127,7 +146,6 @@ public class TitleBarManager : Object {
 
     private void change_titlebar() {
         if (active_window == null || is_window_csd(active_window)) return;
-
         try {
                 bool hide_titlebar = false;
                 if (this.active_window.is_maximized()){
@@ -165,9 +183,16 @@ public class TitleBarManager : Object {
         bool can_close = false;
         bool is_csd = false;
         bool is_maximized = false;
+        bool force_hide = false;
+
         this.active_window = this.screen.get_active_window();
         if(this.active_window != null && this.active_window.get_window_type() != Wnck.WindowType.NORMAL){
             this.active_window = null;
+        }
+
+        if (this.check_valid_app(blacklist_apps)) {
+            this.active_window = null;
+            force_hide = true;
         }
 
         if(this.active_window != null){
@@ -185,7 +210,7 @@ public class TitleBarManager : Object {
             this.on_title_changed("");
         }
         change_titlebar();
-        this.on_active_window_changed(can_minimize, can_maximize, can_close, is_csd, is_maximized);
+        this.on_active_window_changed(can_minimize, can_maximize, can_close, is_csd, is_maximized, force_hide);
     }
 
     private void on_window_opened(Wnck.Window window){
