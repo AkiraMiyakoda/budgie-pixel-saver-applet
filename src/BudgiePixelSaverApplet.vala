@@ -33,6 +33,7 @@ public class Applet : Budgie.Applet
     public string uuid { public set; public get; }
 
     private Settings? settings;
+    private Settings? blacklist_settings;
     private Settings? wm_settings;
     private bool theme_buttons=false;
 
@@ -138,11 +139,16 @@ public class Applet : Budgie.Applet
         this.on_settings_change("size");
         this.on_settings_change("visibility");
         this.on_settings_change("theme-buttons");
-        this.on_settings_change("blacklist-apps");
-
+        
         wm_settings = new GLib.Settings("com.solus-project.budgie-wm");
         wm_settings.changed.connect(this.on_wm_settings_changed);
         this.on_wm_settings_changed("button-style");
+
+        var blacklist_settings_schema = "net.milgar.budgie-pixel-saver.blacklist";
+
+        blacklist_settings = new GLib.Settings(blacklist_settings_schema);
+        blacklist_settings.changed.connect(on_blacklist_settings_change);
+        this.on_blacklist_settings_change("blacklist-apps");
     }
 
     ~Applet(){
@@ -209,6 +215,14 @@ public class Applet : Budgie.Applet
 
     }
 
+    void on_blacklist_settings_change(string key) {
+        if (key == "blacklist-apps") {
+            string[] blacklist_apps = blacklist_settings.get_strv(key);
+            this.force_hide = this.title_bar_manager.check_valid_app(blacklist_apps);
+        }
+        this.update_visibility(true);
+    }
+
     void on_settings_change(string key) {
         if (key == "size") {
             this.label.set_max_width_chars(settings.get_int(key));
@@ -232,9 +246,6 @@ public class Applet : Budgie.Applet
         } else if (key == "theme-buttons") {
             this.theme_buttons = settings.get_boolean(key);
             this.set_css_styles();
-        } else if (key == "blacklist-apps") {
-            string[] blacklist_apps = settings.get_strv(key);
-            this.force_hide = this.title_bar_manager.check_valid_app(blacklist_apps);
         }
         this.update_visibility(true);
     }

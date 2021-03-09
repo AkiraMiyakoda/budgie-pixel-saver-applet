@@ -82,9 +82,11 @@ public class TitleBarManager : Object {
         this.blacklist_apps = blacklist_apps;
         if (this.active_window != null && this.blacklist_apps != null && blacklist_apps.length > 0) {
             if (!this.active_window.has_name()) return false;
-            string app_name = this.active_window.get_name();
+            string? app_name = this.active_window.get_class_group_name();
             foreach (string val in this.blacklist_apps) {
-                if(val == app_name) return true;
+                if(val == app_name) {
+                    return true;
+                }
             }
         }
 

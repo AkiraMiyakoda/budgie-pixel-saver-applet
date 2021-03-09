@@ -49,3 +49,7 @@ shared_library(
 install_data('net.milgar.budgie-pixel-saver.gschema.xml',
     install_dir: '/usr/share/glib-2.0/schemas'
 )
+
+install_data('net.milgar.budgie-pixel-saver.blacklist.gschema.xml',
+    install_dir: '/usr/share/glib-2.0/schemas'
+)
