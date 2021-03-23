@@ -2,7 +2,7 @@
 <schemalist>
   <schema path="/net/milgar/budgie-pixel-saver/" id="net.milgar.budgie-pixel-saver.blacklist">
     <key type="as" name="blacklist-apps">
-      <default>['Firefox', 'TelegramDesktop']</default>
+      <default>['Firefox', 'TelegramDesktop', 'Ulauncher']</default>
       <summary>List of apps to blacklist from being touched by pixel-saver</summary>
       <description>Use xprop to find the WM_CLASS Name</description>
     </key>
