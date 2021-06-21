@@ -2,12 +2,12 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.18"/>
-  <object class="GtkAdjustment" id="adjustment1">
-    <property name="upper">100</property>
+  <object class="GtkAdjustment" id="adjustment_length">
+    <property name="upper">200</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkListStore" id="liststore1">
+  <object class="GtkListStore" id="liststore_visibility">
     <columns>
       <!-- column-name id -->
       <column type="gint"/>
@@ -26,6 +26,24 @@
       <row>
         <col id="0">2</col>
         <col id="1">Buttons</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_title_alignment">
+    <columns>
+      <!-- column-name id -->
+      <column type="gint"/>
+      <!-- column-name type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0">0</col>
+        <col id="1">Left</col>
+      </row>
+      <row>
+        <col id="0">1</col>
+        <col id="1">Right</col>
       </row>
     </data>
   </object>
@@ -99,7 +117,7 @@ windows</property>
         <property name="can_focus">True</property>
         <property name="halign">end</property>
         <property name="valign">start</property>
-        <property name="adjustment">adjustment1</property>
+        <property name="adjustment">adjustment_length</property>
         <property name="climb_rate">1</property>
       </object>
       <packing>
@@ -113,7 +131,7 @@ windows</property>
         <property name="can_focus">False</property>
         <property name="halign">end</property>
         <property name="valign">start</property>
-        <property name="model">liststore1</property>
+        <property name="model">liststore_visibility</property>
         <property name="active">0</property>
         <property name="id_column">0</property>
         <child>
@@ -174,6 +192,39 @@ windows</property>
       <packing>
         <property name="left_attach">1</property>
         <property name="top_attach">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="label" translatable="yes">Title Alignment</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">5</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBox" id="combobox_title_alignment">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">end</property>
+        <property name="valign">start</property>
+        <property name="model">liststore_title_alignment</property>
+        <property name="active">0</property>
+        <property name="id_column">0</property>
+        <child>
+          <object class="GtkCellRendererText"/>
+          <attributes>
+            <attribute name="text">1</attribute>
+          </attributes>
+        </child>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">5</property>
       </packing>
     </child>
   </template>
