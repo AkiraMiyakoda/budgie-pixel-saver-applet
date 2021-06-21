@@ -5,6 +5,9 @@ const int VISIBILITY_TITLE_BUTTONS = 0;
 const int VISIBILITY_TITLE = 1;
 const int VISIBILITY_BUTTONS = 2;
 
+const int TITLE_ALIGNMENT_LEFT  = 0;
+const int TITLE_ALIGNMENT_RIGHT = 1;
+
 public class Plugin : Budgie.Plugin, Peas.ExtensionBase
 {
     public Budgie.Applet get_panel_widget(string uuid)
@@ -35,7 +38,9 @@ public class Applet : Budgie.Applet
     private Settings? settings;
     private Settings? blacklist_settings;
     private Settings? wm_settings;
-    private bool theme_buttons=false;
+    private bool theme_buttons = false;
+    private int title_alignment = TITLE_ALIGNMENT_LEFT;
+    private Budgie.PanelPosition panel_position = Budgie.PanelPosition.TOP;
 
     PixelSaver.TitleBarManager title_bar_manager;
 
@@ -61,7 +66,6 @@ public class Applet : Budgie.Applet
 
         this.label = new Gtk.Label ("");
         this.label.set_ellipsize (Pango.EllipsizeMode.END);
-        this.label.set_alignment(0, 0.5f);
 
         this.event_box = new Gtk.EventBox();
         this.event_box.add(this.label);
@@ -139,6 +143,7 @@ public class Applet : Budgie.Applet
         this.on_settings_change("size");
         this.on_settings_change("visibility");
         this.on_settings_change("theme-buttons");
+        this.on_settings_change("title-alignment");
         
         wm_settings = new GLib.Settings("com.solus-project.budgie-wm");
         wm_settings.changed.connect(this.on_wm_settings_changed);
@@ -215,6 +220,38 @@ public class Applet : Budgie.Applet
 
     }
 
+    private void set_title_alignment() {
+        float align = (this.title_alignment == TITLE_ALIGNMENT_LEFT) ? 0.0f : 1.0f;
+        switch (this.panel_position) {
+            case Budgie.PanelPosition.LEFT:
+                this.label.set_alignment(0.5f, 1.0f - align);
+                break;
+            case Budgie.PanelPosition.RIGHT:
+                this.label.set_alignment(0.5f, align);
+                break;
+            default:
+                this.label.set_alignment(align, 0.5f);
+                break;
+        }
+    }
+
+    private void set_panel_position() {
+        switch (this.panel_position) {
+            case Budgie.PanelPosition.LEFT:
+                this.label.angle = 90;
+                this.applet_container.orientation = Gtk.Orientation.VERTICAL;
+                break;
+            case Budgie.PanelPosition.RIGHT:
+                this.label.angle = 270;
+                this.applet_container.orientation = Gtk.Orientation.VERTICAL;
+                break;
+            default:
+                this.label.angle = 0;
+                this.applet_container.orientation = Gtk.Orientation.HORIZONTAL;
+                break;
+        }
+    }
+
     void on_blacklist_settings_change(string key) {
         if (key == "blacklist-apps") {
             string[] blacklist_apps = blacklist_settings.get_strv(key);
@@ -246,6 +283,9 @@ public class Applet : Budgie.Applet
         } else if (key == "theme-buttons") {
             this.theme_buttons = settings.get_boolean(key);
             this.set_css_styles();
+        } else if (key == "title-alignment") {
+            this.title_alignment = settings.get_int(key);
+            this.set_title_alignment();
         }
         this.update_visibility(true);
     }
@@ -338,19 +378,9 @@ public class Applet : Budgie.Applet
      */
     public override void panel_position_changed(Budgie.PanelPosition position)
     {
-        if (position == Budgie.PanelPosition.LEFT) {
-            this.label.angle = 90;
-            this.applet_container.orientation = Gtk.Orientation.VERTICAL;
-            this.label.set_alignment(0.5f, 1);
-        } else if (position == Budgie.PanelPosition.RIGHT) {
-            this.label.angle = 270;
-            this.applet_container.orientation = Gtk.Orientation.VERTICAL;
-            this.label.set_alignment(0.5f, 0);
-        } else {
-            this.label.angle = 0;
-            this.applet_container.orientation = Gtk.Orientation.HORIZONTAL;
-            this.label.set_alignment(0, 0.5f);
-        }
+        this.panel_position = position;
+        this.set_panel_position();
+        this.set_title_alignment();
     }
 
     public override bool supports_settings() {
@@ -383,6 +413,9 @@ public class AppletSettings : Gtk.Grid
     [GtkChild]
     private Gtk.Switch? switch_theme;
 
+    [GtkChild]
+    private Gtk.ComboBox? combobox_title_alignment;
+
     public AppletSettings(Settings? settings)
     {
         this.settings = settings;
@@ -392,6 +425,7 @@ public class AppletSettings : Gtk.Grid
         this.settings.bind("hide-for-csd", switch_csd, "active", SettingsBindFlags.DEFAULT);
         this.settings.bind("hide-for-unmaximized", switch_unmaximized, "active", SettingsBindFlags.DEFAULT);
         this.settings.bind("theme-buttons", switch_theme, "active", SettingsBindFlags.DEFAULT);
+        this.settings.bind("title-alignment", combobox_title_alignment, "active", SettingsBindFlags.DEFAULT);
     }
 }
 
