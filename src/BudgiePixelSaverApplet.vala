@@ -205,6 +205,9 @@ public class Applet : Budgie.Applet
             .pixelsaver {
                 min-height: 0px;
                 background-color: transparent;
+                margin: -1px;
+                border-width: unset;
+                border-radius: unset;
             }
             """;
         Gdk.Screen screen=this.get_screen();
