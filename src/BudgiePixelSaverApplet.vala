@@ -78,6 +78,7 @@ public class Applet : Budgie.Applet
         this.applet_container.pack_start (this.close_button, false, false, 0);
         this.add (this.applet_container);
 
+        this.define_css_styles();
         this.set_css_styles();
 
         event_box.button_press_event.connect ((event) => {
@@ -161,6 +162,32 @@ public class Applet : Budgie.Applet
         this.title_bar_manager.unregister();
     }
 
+    private void define_css_styles() {
+        string container_css = """
+            .pixelsaver {
+                min-height: 0px;
+                background-color: transparent;
+                margin: -1px;
+                border-width: unset;
+                border-radius: unset;
+            }
+            .pixelsaver_reset_title_color {
+                color: unset;
+            }
+            """;
+
+        Gdk.Screen screen=this.get_screen();
+        Gtk.CssProvider css_provider = new Gtk.CssProvider();
+        try {
+            css_provider.load_from_data(container_css);
+            Gtk.StyleContext.add_provider_for_screen(
+                screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER);
+        }
+        catch (Error e) {
+            message("Could not load css %s", e.message);
+        }
+    }
+
     private void set_css_styles(){
         this.applet_container.get_style_context().add_class("titlebar");
         this.applet_container.get_style_context().add_class("pixelsaver");
@@ -208,31 +235,6 @@ public class Applet : Budgie.Applet
         else {
             this.applet_container.get_style_context().add_class("pixelsaver_reset_title_color");
         }
-
-        string container_css = """
-            .pixelsaver {
-                min-height: 0px;
-                background-color: transparent;
-                margin: -1px;
-                border-width: unset;
-                border-radius: unset;
-            }
-            .pixelsaver_reset_title_color {
-                color: unset;
-            }
-            """;
-            
-        Gdk.Screen screen=this.get_screen();
-        Gtk.CssProvider css_provider = new Gtk.CssProvider();
-        try {
-            css_provider.load_from_data(container_css);
-            Gtk.StyleContext.add_provider_for_screen(
-                screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER);
-        }
-        catch (Error e) {
-            message("Could not load css %s", e.message);
-        }
-
     }
 
     private void set_title_alignment() {
