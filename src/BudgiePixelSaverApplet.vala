@@ -39,6 +39,7 @@ public class Applet : Budgie.Applet
     private Settings? blacklist_settings;
     private Settings? wm_settings;
     private bool theme_buttons = false;
+    private bool theme_title = false;
     private int title_alignment = TITLE_ALIGNMENT_LEFT;
     private Budgie.PanelPosition panel_position = Budgie.PanelPosition.TOP;
 
@@ -201,6 +202,13 @@ public class Applet : Budgie.Applet
             this.close_button.get_style_context().remove_class("close");
         }
 
+        if (this.theme_title) {
+            this.applet_container.get_style_context().remove_class("pixelsaver_reset_title_color");
+        }
+        else {
+            this.applet_container.get_style_context().add_class("pixelsaver_reset_title_color");
+        }
+
         string container_css = """
             .pixelsaver {
                 min-height: 0px;
@@ -209,7 +217,11 @@ public class Applet : Budgie.Applet
                 border-width: unset;
                 border-radius: unset;
             }
+            .pixelsaver_reset_title_color {
+                color: unset;
+            }
             """;
+            
         Gdk.Screen screen=this.get_screen();
         Gtk.CssProvider css_provider = new Gtk.CssProvider();
         try {
@@ -285,6 +297,9 @@ public class Applet : Budgie.Applet
             }
         } else if (key == "theme-buttons") {
             this.theme_buttons = settings.get_boolean(key);
+            this.set_css_styles();
+        } else if (key == "theme-title") {
+            this.theme_title = settings.get_boolean(key);
             this.set_css_styles();
         } else if (key == "title-alignment") {
             this.title_alignment = settings.get_int(key);
@@ -414,7 +429,10 @@ public class AppletSettings : Gtk.Grid
     private Gtk.Switch? switch_unmaximized;
 
     [GtkChild]
-    private Gtk.Switch? switch_theme;
+    private Gtk.Switch? switch_theme_buttons;
+
+    [GtkChild]
+    private Gtk.Switch? switch_theme_title;
 
     [GtkChild]
     private Gtk.ComboBox? combobox_title_alignment;
@@ -427,7 +445,8 @@ public class AppletSettings : Gtk.Grid
         this.settings.bind("visibility", combobox_visibility, "active", SettingsBindFlags.DEFAULT);
         this.settings.bind("hide-for-csd", switch_csd, "active", SettingsBindFlags.DEFAULT);
         this.settings.bind("hide-for-unmaximized", switch_unmaximized, "active", SettingsBindFlags.DEFAULT);
-        this.settings.bind("theme-buttons", switch_theme, "active", SettingsBindFlags.DEFAULT);
+        this.settings.bind("theme-buttons", switch_theme_buttons, "active", SettingsBindFlags.DEFAULT);
+        this.settings.bind("theme-title", switch_theme_title, "active", SettingsBindFlags.DEFAULT);
         this.settings.bind("title-alignment", combobox_title_alignment, "active", SettingsBindFlags.DEFAULT);
     }
 }
