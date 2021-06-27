@@ -3,10 +3,12 @@ This applet hides the title bar from maximized windows and creates a new one ins
 
 ![Screenshot](screenshot.jpg)
 
-* Added settings to choose action buttons and title bar visibility. This way its possible to create different layouts with multiple applets.
-* Added settings to set title length.
+* Use the applet setting to change how the applet operates. 
 
 ![Screenshot](screenshot2.jpg)
+
+Applications that don't play well with the applet can be blacklisted - use dconf-editor and
+edit the net.milgar.budgie-pixel-saver.blacklist blacklist-apps key
 
 ---
 
@@ -37,3 +39,9 @@ sudo ninja install
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or at your option) any later version.
 
 Workspaces applet of Budgie Desktop is used as a templete for this project. Spacer applet used as a templete in implementing settings.
+
+### Authors
+
+[Mehmet Ali ILGAR](https://github.com/ilgarmehmetali) 
+[David Mohammed](https://github.com/fossfreedom)
+[Akira Miyakoda](https://github.com/AkiraMiyakoda)
