@@ -160,6 +160,8 @@ public class Applet : Budgie.Applet
         blacklist_settings = new GLib.Settings(blacklist_settings_schema);
         blacklist_settings.changed.connect(on_blacklist_settings_change);
         this.on_blacklist_settings_change("blacklist-apps");
+
+        this.drag_end.connect(this.on_drag_end);
     }
 
     ~Applet(){
@@ -378,7 +380,6 @@ public class Applet : Budgie.Applet
         Gtk.drag_source_unset(this);
         if (this.is_active_window_maximized) {
             Gtk.drag_source_set(this, Gdk.ModifierType.BUTTON1_MASK, target_list, Gdk.DragAction.MOVE);
-            this.drag_end.connect(this.on_drag_end);
         }
 
         queue_resize();
