@@ -42,6 +42,6 @@ Workspaces applet of Budgie Desktop is used as a templete for this project. Spac
 
 ### Authors
 
-[Mehmet Ali ILGAR](https://github.com/ilgarmehmetali) 
-[David Mohammed](https://github.com/fossfreedom)
-[Akira Miyakoda](https://github.com/AkiraMiyakoda)
+ - [Mehmet Ali ILGAR](https://github.com/ilgarmehmetali) 
+ - [David Mohammed](https://github.com/fossfreedom)
+ - [Akira Miyakoda](https://github.com/AkiraMiyakoda)
