@@ -8,6 +8,10 @@ const int VISIBILITY_BUTTONS = 2;
 const int TITLE_ALIGNMENT_LEFT  = 0;
 const int TITLE_ALIGNMENT_RIGHT = 1;
 
+const Gtk.TargetEntry[] target_list = {
+    { "application/budgie-pixel-saver-applet", 0, 0 }
+};
+
 public class Plugin : Budgie.Plugin, Peas.ExtensionBase
 {
     public Budgie.Applet get_panel_widget(string uuid)
@@ -146,7 +150,7 @@ public class Applet : Budgie.Applet
         this.on_settings_change("visibility");
         this.on_settings_change("theme-buttons");
         this.on_settings_change("title-alignment");
-        
+
         wm_settings = new GLib.Settings("com.solus-project.budgie-wm");
         wm_settings.changed.connect(this.on_wm_settings_changed);
         this.on_wm_settings_changed("button-style");
@@ -156,6 +160,8 @@ public class Applet : Budgie.Applet
         blacklist_settings = new GLib.Settings(blacklist_settings_schema);
         blacklist_settings.changed.connect(on_blacklist_settings_change);
         this.on_blacklist_settings_change("blacklist-apps");
+
+        this.drag_end.connect(this.on_drag_end);
     }
 
     ~Applet(){
@@ -371,8 +377,16 @@ public class Applet : Budgie.Applet
             //this.applet_container.show();
         }
 
+        Gtk.drag_source_unset(this);
+        if (this.is_active_window_maximized) {
+            Gtk.drag_source_set(this, Gdk.ModifierType.BUTTON1_MASK, target_list, Gdk.DragAction.MOVE);
+        }
 
         queue_resize();
+    }
+
+    private void on_drag_end(Gtk.Widget widget, Gdk.DragContext context) {
+        this.title_bar_manager.toggle_maximize_active_window();
     }
 
     void on_wm_settings_changed(string key){
