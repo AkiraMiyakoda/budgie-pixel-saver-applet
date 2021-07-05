@@ -465,7 +465,7 @@ public class Applet : Budgie.Applet
 }
 
 [GtkTemplate (ui = "/net/milgar/budgie-pixel-saver/settings.ui")]
-public class AppletSettings : Gtk.Grid
+public class AppletSettings : Gtk.Box
 {
     Settings? settings = null;
 
