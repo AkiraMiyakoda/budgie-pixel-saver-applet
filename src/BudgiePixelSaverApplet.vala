@@ -8,6 +8,8 @@ const int VISIBILITY_BUTTONS = 2;
 const int TITLE_ALIGNMENT_LEFT  = 0;
 const int TITLE_ALIGNMENT_RIGHT = 1;
 
+const int TITLE_BUTTONS_SPACING = 7;
+
 const Gtk.TargetEntry[] target_list = {
     { "application/budgie-pixel-saver-applet", 0, 0 }
 };
@@ -20,16 +22,30 @@ public class Plugin : Budgie.Plugin, Peas.ExtensionBase
     }
 }
 
+public class AppletContainer : Gtk.Box
+{
+    public AppletContainer (Gtk.Orientation orientation, int spacing) {
+        this.orientation = orientation;
+        this.spacing = spacing;
+    }
+
+    static construct {
+        // This behaves like Gtk.HeaderBar in the CSS hierarchy.
+        set_css_name ("headerbar");
+    }
+}
+
 public class Applet : Budgie.Applet
 {
-    Gtk.Label label;
+    Gtk.Label title_label;
     Gtk.Button minimize_button;
     Gtk.Button maximize_button;
     Gtk.Button close_button;
+    Gtk.Box button_box;
     Gtk.Image maximize_image;
     Gtk.Image restore_image;
-    Gtk.EventBox event_box;
-    Gtk.Box applet_container;
+    Gtk.EventBox title_box;
+    AppletContainer applet_container;
 
     bool is_buttons_visible {get; set;}
     bool is_title_visible {get; set;}
@@ -56,43 +72,40 @@ public class Applet : Budgie.Applet
         this.title_bar_manager = PixelSaver.TitleBarManager.INSTANCE;
         this.title_bar_manager.register();
 
-        this.minimize_button = new Gtk.Button.from_icon_name ("window-minimize-symbolic");
-        this.minimize_button.relief = Gtk.ReliefStyle.NONE;
+        this.minimize_button = new Gtk.Button.from_icon_name ("window-minimize-symbolic", Gtk.IconSize.BUTTON);
+        this.maximize_button = new Gtk.Button.from_icon_name ("window-maximize-symbolic", Gtk.IconSize.BUTTON);
+        this.close_button    = new Gtk.Button.from_icon_name ("window-close-symbolic",    Gtk.IconSize.BUTTON);
 
-        this.maximize_button = new Gtk.Button.from_icon_name ("window-maximize-symbolic");
-        this.maximize_button.relief = Gtk.ReliefStyle.NONE;
-
-        this.close_button = new Gtk.Button.from_icon_name ("window-close-symbolic", Gtk.IconSize.BUTTON);
-        this.close_button.relief = Gtk.ReliefStyle.NONE;
+        this.button_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+        this.button_box.pack_start (this.minimize_button, false, false, 0);
+        this.button_box.pack_start (this.maximize_button, false, false, 0);
+        this.button_box.pack_start (this.close_button,    false, false, 0);
 
         this.maximize_image = new Gtk.Image.from_icon_name ("window-maximize-symbolic", Gtk.IconSize.BUTTON);
-        this.restore_image = new Gtk.Image.from_icon_name ("window-restore-symbolic", Gtk.IconSize.BUTTON);
+        this.restore_image  = new Gtk.Image.from_icon_name ("window-restore-symbolic",  Gtk.IconSize.BUTTON);
 
+        this.title_label = new Gtk.Label ("");
+        this.title_label.set_ellipsize (Pango.EllipsizeMode.END);
 
-        this.label = new Gtk.Label ("");
-        this.label.set_ellipsize (Pango.EllipsizeMode.END);
+        this.title_box = new Gtk.EventBox();
+        this.title_box.add(this.title_label);
 
-        this.event_box = new Gtk.EventBox();
-        this.event_box.add(this.label);
-
-        this.applet_container = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-        this.applet_container.pack_start (this.event_box, false, false, 0);
-        this.applet_container.pack_start (this.minimize_button, false, false, 0);
-        this.applet_container.pack_start (this.maximize_button, false, false, 0);
-        this.applet_container.pack_start (this.close_button, false, false, 0);
+        this.applet_container = new AppletContainer (Gtk.Orientation.HORIZONTAL, 0);
+        this.applet_container.pack_start (this.title_box,  false, false, 0);
+        this.applet_container.pack_start (this.button_box, false, false, 0);
         this.add (this.applet_container);
 
         this.define_css_styles();
         this.set_css_styles();
 
-        event_box.button_press_event.connect ((event) => {
+        title_box.button_press_event.connect ((event) => {
             if (event.type == Gdk.EventType.@2BUTTON_PRESS){
                 this.title_bar_manager.toggle_maximize_active_window();
             }
             return Gdk.EVENT_PROPAGATE;
         });
 
-        event_box.button_release_event.connect ((event) => {
+        title_box.button_release_event.connect ((event) => {
             if (event.button == 3) {
                 Wnck.ActionMenu menu = this.title_bar_manager.get_action_menu_for_active_window();
                 menu.popup(null, null, null, event.button, Gtk.get_current_event_time());
@@ -114,18 +127,14 @@ public class Applet : Budgie.Applet
         });
 
         this.title_bar_manager.on_title_changed.connect((title) => {
-            this.label.set_text(title);
-            this.label.set_tooltip_text(title);
+            this.title_label.set_text(title);
+            this.title_label.set_tooltip_text(title);
         });
 
         this.title_bar_manager.on_window_state_changed.connect((is_maximized) => {
             this.is_active_window_maximized = is_maximized;
-            this.update_visibility(false);
-            if(is_maximized) {
-                this.maximize_button.image = this.restore_image;
-            } else {
-                this.maximize_button.image = this.maximize_image;
-            }
+            this.update_visibility();
+            this.set_maximize_button_image();
         });
 
         this.title_bar_manager.on_active_window_changed.connect(
@@ -136,7 +145,8 @@ public class Applet : Budgie.Applet
                 this.is_active_window_csd = is_active_window_csd;
                 this.is_active_window_maximized = is_active_window_maximized;
                 this.force_hide = force_hide;
-                this.update_visibility(false);
+                this.update_visibility();
+                this.set_maximize_button_image();
             }
         );
 
@@ -171,14 +181,19 @@ public class Applet : Budgie.Applet
     private void define_css_styles() {
         string container_css = """
             .pixelsaver {
-                min-height: 0px;
+                min-height: unset;
+                min-width:  unset;
                 background-color: transparent;
                 margin: -1px;
-                border-width: unset;
+                border-width:  unset;
                 border-radius: unset;
             }
-            .pixelsaver_reset_title_color {
+            .pixelsaver-unset-title-theme {
                 color: unset;
+            }
+            .pixelsaver-button  {
+                min-width:  unset;
+                min-height: unset;
             }
             """;
 
@@ -194,52 +209,47 @@ public class Applet : Budgie.Applet
         }
     }
 
-    private void set_css_styles(){
-        this.applet_container.get_style_context().add_class("titlebar");
-        this.applet_container.get_style_context().add_class("pixelsaver");
+    private void set_css_styles () {
+        var container_context = this.applet_container.get_style_context();
+        container_context.add_class("pixelsaver");
 
         if (theme_buttons) {
-            var context = this.minimize_button.get_style_context();
-            var list_classes =  context.list_classes();
-            foreach (string class in list_classes) {
-                context.remove_class(class);
-            }
-            context.add_class("titlebutton");
-            context.add_class("minimize");
+            var button_context = this.minimize_button.get_style_context();
+            button_context.add_class("titlebutton");
+            button_context.add_class("minimize");
+            button_context.add_class("pixelsaver-button");
 
-            context = this.maximize_button.get_style_context();
-            list_classes =  context.list_classes();
-            foreach (string class in list_classes) {
-                context.remove_class(class);
-            }
+            button_context = this.maximize_button.get_style_context();
+            button_context.add_class("titlebutton");
+            button_context.add_class("maximize");
+            button_context.add_class("pixelsaver-button");
 
-            context.add_class("titlebutton");
-            context.add_class("maximize");
-
-            context = this.close_button.get_style_context();
-            list_classes =  context.list_classes();
-            foreach (string class in list_classes) {
-                context.remove_class(class);
-            }
-
-            context.add_class("titlebutton");
-            context.add_class("close");
+            button_context = this.close_button.get_style_context();
+            button_context.add_class("titlebutton");
+            button_context.add_class("close");
+            button_context.add_class("pixelsaver-button");
         } else {
-            this.minimize_button.get_style_context().remove_class("titlebutton");
-            this.minimize_button.get_style_context().remove_class("minimize");
+            var button_context = this.minimize_button.get_style_context();
+            button_context.remove_class("titlebutton");
+            button_context.remove_class("minimize");
+            button_context.remove_class("pixelsaver-button");
 
-            this.maximize_button.get_style_context().remove_class("titlebutton");
-            this.maximize_button.get_style_context().remove_class("maximize");
+            button_context = this.maximize_button.get_style_context();
+            button_context.remove_class("titlebutton");
+            button_context.remove_class("maximize");
+            button_context.remove_class("pixelsaver-button");
 
-            this.close_button.get_style_context().remove_class("titlebutton");
-            this.close_button.get_style_context().remove_class("close");
+            button_context = this.maximize_button.get_style_context();
+            button_context.remove_class("titlebutton");
+            button_context.remove_class("close");
+            button_context.remove_class("pixelsaver-button");
         }
 
         if (this.theme_title) {
-            this.applet_container.get_style_context().remove_class("pixelsaver_reset_title_color");
+            container_context.remove_class("pixelsaver-unset-title-theme");
         }
         else {
-            this.applet_container.get_style_context().add_class("pixelsaver_reset_title_color");
+            container_context.add_class("pixelsaver-unset-title-theme");
         }
     }
 
@@ -247,13 +257,13 @@ public class Applet : Budgie.Applet
         float align = (this.title_alignment == TITLE_ALIGNMENT_LEFT) ? 0.0f : 1.0f;
         switch (this.panel_position) {
             case Budgie.PanelPosition.LEFT:
-                this.label.set_alignment(0.5f, 1.0f - align);
+                this.title_label.set_alignment(0.5f, 1.0f - align);
                 break;
             case Budgie.PanelPosition.RIGHT:
-                this.label.set_alignment(0.5f, align);
+                this.title_label.set_alignment(0.5f, align);
                 break;
             default:
-                this.label.set_alignment(align, 0.5f);
+                this.title_label.set_alignment(align, 0.5f);
                 break;
         }
     }
@@ -261,17 +271,42 @@ public class Applet : Budgie.Applet
     private void set_panel_position() {
         switch (this.panel_position) {
             case Budgie.PanelPosition.LEFT:
-                this.label.angle = 90;
+                this.title_label.angle = 90;
                 this.applet_container.orientation = Gtk.Orientation.VERTICAL;
+                this.button_box.orientation = Gtk.Orientation.VERTICAL;
+                this.title_label.margin_start  = 0;
+                this.title_label.margin_end    = 0;
+                this.title_label.margin_top    = TITLE_BUTTONS_SPACING;
+                this.title_label.margin_bottom = TITLE_BUTTONS_SPACING;
                 break;
             case Budgie.PanelPosition.RIGHT:
-                this.label.angle = 270;
+                this.title_label.angle = 270;
                 this.applet_container.orientation = Gtk.Orientation.VERTICAL;
+                this.button_box.orientation = Gtk.Orientation.VERTICAL;
+                this.title_label.margin_start  = 0;
+                this.title_label.margin_end    = 0;
+                this.title_label.margin_top    = TITLE_BUTTONS_SPACING;
+                this.title_label.margin_bottom = TITLE_BUTTONS_SPACING;
                 break;
             default:
-                this.label.angle = 0;
+                this.title_label.angle = 0;
                 this.applet_container.orientation = Gtk.Orientation.HORIZONTAL;
+                this.button_box.orientation = Gtk.Orientation.HORIZONTAL;
+                this.title_label.margin_start  = TITLE_BUTTONS_SPACING;
+                this.title_label.margin_end    = TITLE_BUTTONS_SPACING;
+                this.title_label.margin_top    = 0;
+                this.title_label.margin_bottom = 0;
                 break;
+        }
+    }
+
+    private void set_maximize_button_image() {
+        if(this.is_active_window_maximized) {
+            this.get_style_context().add_class("maximized");
+            this.maximize_button.image = this.restore_image;
+        } else {
+            this.get_style_context().remove_class("maximized");
+            this.maximize_button.image = this.maximize_image;
         }
     }
 
@@ -280,13 +315,13 @@ public class Applet : Budgie.Applet
             string[] blacklist_apps = blacklist_settings.get_strv(key);
             this.force_hide = this.title_bar_manager.check_valid_app(blacklist_apps);
         }
-        this.update_visibility(true);
+        this.update_visibility();
     }
 
     void on_settings_change(string key) {
         if (key == "size") {
-            this.label.set_max_width_chars(settings.get_int(key));
-            this.label.set_width_chars(settings.get_int(key));
+            this.title_label.set_max_width_chars(settings.get_int(key));
+            this.title_label.set_width_chars(settings.get_int(key));
         } else if (key == "visibility") {
             int visibility = settings.get_int(key);
             switch (visibility) {
@@ -313,10 +348,10 @@ public class Applet : Budgie.Applet
             this.title_alignment = settings.get_int(key);
             this.set_title_alignment();
         }
-        this.update_visibility(true);
+        this.update_visibility();
     }
 
-    void update_visibility(bool is_settings_changed = false){
+    void update_visibility() {
         bool hide_for_csd = this.is_active_window_csd && this.settings.get_boolean("hide-for-csd");
         bool hide_for_unmaximized = !this.is_active_window_maximized && this.settings.get_boolean("hide-for-unmaximized");
 
@@ -358,9 +393,9 @@ public class Applet : Budgie.Applet
         }*/
 
         if(!this.is_title_visible || hide_for_csd || hide_for_unmaximized || force_hide) {
-            this.label.hide();
+            this.title_label.hide();
         } else {
-            this.label.show();
+            this.title_label.show();
         }
 
         if( !this.is_buttons_visible || hide_for_unmaximized || hide_for_csd || force_hide) {
@@ -395,15 +430,17 @@ public class Applet : Budgie.Applet
 
         string button_style = wm_settings.get_string(key);
         if (button_style == "traditional") {
-            this.applet_container.reorder_child (this.event_box, 0);
-            this.applet_container.reorder_child (this.minimize_button, 1);
-            this.applet_container.reorder_child (this.maximize_button, 2);
-            this.applet_container.reorder_child (this.close_button, 3);
+            this.applet_container.reorder_child (this.title_box,  0);
+            this.applet_container.reorder_child (this.button_box, 1);
+            this.button_box.reorder_child (this.minimize_button, 0);
+            this.button_box.reorder_child (this.maximize_button, 1);
+            this.button_box.reorder_child (this.close_button,    2);
         } else if(button_style == "left") {
-            this.applet_container.reorder_child (this.close_button, 0);
-            this.applet_container.reorder_child (this.minimize_button, 1);
-            this.applet_container.reorder_child (this.maximize_button, 2);
-            this.applet_container.reorder_child (this.event_box, 3);
+            this.applet_container.reorder_child (this.button_box, 0);
+            this.applet_container.reorder_child (this.title_box,  1);
+            this.button_box.reorder_child (this.close_button,    0);
+            this.button_box.reorder_child (this.maximize_button, 1);
+            this.button_box.reorder_child (this.minimize_button, 2);
         }
     }
 
